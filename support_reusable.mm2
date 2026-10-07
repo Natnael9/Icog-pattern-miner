@@ -1,0 +1,61 @@
+;; ==========================================
+;; DATA KNOWLEDGE BASE (Input Space)
+;; ==========================================
+(Inheritance cat mammal)
+(Inheritance mammal animal)
+(Inheritance square shape)
+
+(threshold 2)
+
+;; ==========================================
+;; PATTERN REGISTRATIONS
+;; Format: (pattern-def <id> <shape> <projected-vars>)
+;; ==========================================
+(pattern-def p1 (Inheritance $x $y) ($x $y))
+(pattern-def p2 (Inheritance cat $y) $y)
+
+;; Task / Trigger: patterns you want to evaluate
+(compute-support p1)
+(compute-support p2)
+
+;; ==========================================
+;; REUSABLE PIPELINE RULES
+;; ==========================================
+
+; --- Phase 0: Generic Support Counting ---
+; Matches any requested candidate and counts matching instances in the Space
+(exec (0 0)
+  (, (compute-support $pid)
+     (pattern-def $pid $body $vars)
+     $body)
+  (O (count (support $pid $k) $k $vars)))
+
+; --- Phase 1: Numeric Conversions ---
+; Converts the count string to binary i32 for arithmetic/comparison
+(exec (1 0)
+  (, (support $pid $k))
+  (O (pure (support_i32 $pid $r) $r (i32_from_string $k))))
+
+; Converts the global threshold string to binary i32
+(exec (1 1)
+  (, (threshold $t))
+  (O (pure (thresh_i32 $r) $r (i32_from_string $t))))
+
+; --- Phase 2: Relational Check ---
+; Evaluates whether count >= threshold (returns boolean "true"/"false")
+(exec (2 0)
+  (, (support_i32 $pid $cnt)
+     (thresh_i32 $min))
+  (O (pure (is_frequent $pid $r) $r (ge_i32 $cnt $min))))
+
+; --- Phase 3: Classification Template ---
+; Emits final frequent / infrequent classification
+(exec (3 0)
+  (, (is_frequent $pid true)
+     (support $pid $k))
+  (, (frequent $pid (support $k))))
+
+(exec (3 1)
+  (, (is_frequent $pid false)
+     (support $pid $k))
+  (, (infrequent $pid (support $k))))

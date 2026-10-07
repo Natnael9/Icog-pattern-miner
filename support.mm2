@@ -1,0 +1,38 @@
+(Inheritance cat mammal)
+(Inheritance mammal animal)
+(Inheritance square shape)
+
+(threshold 2)
+
+(candidate p1)
+(candidate p2)
+
+(exec (0 0)
+(, (candidate p1)
+(Inheritance $x $y))
+(O (count(support p1 $k)  $k ($x $y)))
+)
+
+(exec (0 1)
+  (, (candidate p2)
+     (Inheritance cat $y))
+  (O (count (support p2 $k) $k $y)))
+
+
+(exec (1 0)
+  (, (support $pat $k))
+  (O (pure (support_i32 $pat $r) $r (i32_from_string $k))))
+
+(exec (1 1)
+  (, (threshold $t))
+  (O (pure (thresh_i32 $r) $r (i32_from_string $t))))
+
+(exec (2 0)
+  (, (support_i32 $pat $cnt)
+     (thresh_i32 $min))
+  (O (pure (is_frequent $pat $r) $r (ge_i32 $cnt $min))))
+
+  (exec (3 0)
+  (, (is_frequent $pat true)
+     (support $pat $k))
+  (, (frequent $pat (support $k))))
